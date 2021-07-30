@@ -7,19 +7,24 @@
 \author{Abhishek Sarkar}
 \date{}
 
+\DeclareMathOperator\diag{diag}
 \DeclareMathOperator\E{E}
 \DeclareMathOperator\N{\mathcal{N}}
 \newcommand\mb{\mathbf{B}}
 \newcommand\me{\mathbf{E}}
 \newcommand\mi{\mathbf{I}}
+\newcommand\mm{\mathbf{M}}
 \newcommand\mr{\mathbf{R}}
 \newcommand\msigma{\boldsymbol{\Sigma}}
+\newcommand\ms{\mathbf{S}}
 \newcommand\mw{\mathbf{W}}
 \newcommand\mx{\mathbf{X}}
 \newcommand\my{\mathbf{Y}}
 \newcommand\vb{\mathbf{b}}
 \newcommand\vmu{\boldsymbol{\mu}}
+\newcommand\vm{\mathbf{m}}
 \newcommand\vphi{\boldsymbol{\phi}}
+\newcommand\vs{\mathbf{s}}
 \newcommand\vtheta{\boldsymbol{\theta}}
 \newcommand\vx{\mathbf{x}}
 \newcommand\vz{\mathbf{z}}
@@ -53,7 +58,8 @@ inference goals for PPCA:
 
 \begin{enumerate}
 \item Estimate $\mw, \sigma^2$ given observed data $\vx_1, \ldots, \vx_n$. This
-  involves maximizing the likelihood, that is, solving the optimization problem
+  involves maximizing the marginal likelihood, that is, solving the
+  optimization problem
   %
   \begin{align}
     \hat\mw, \hat\sigma^2 &= \arg\max_{\mw, \sigma^2} \sum_{i=1}^n \ln p(\vx_i \mid \mw, \sigma^2)\\
@@ -87,9 +93,9 @@ eigenvalues. (Equivalently, the closed forms are related to the singular value
 decomposition of $\mx$.)
 
 How does one estimate $\vz_i$ given $\vx_i$? One can think of $p(\vx_i \mid
-\vz_i, \mw, \sigma^2)$ as a likelihood and $p(\vz_i)$ as the prior in a
-Bayesian setting. Both are Gaussian, and therefore conjugate; therefore, the
-posterior is also Gaussian:
+\vz_i, \mw, \sigma^2)$ as the likelihood and $p(\vz_i)$ as the prior in a
+Bayesian setting. Both are Gaussian; therefore, the posterior is also Gaussian
+(due to conjugacy):
 %
 \begin{equation}
   \vz_i \mid \vx_i, \mw, \sigma^2 \sim \N((\mw'\mw + \sigma^2 \mi)^{-1} \mw' \vx_i, \sigma^2 (\mw'\mw + \sigma^2 \mi)^{-1}),
@@ -114,7 +120,7 @@ LVMs:
 
 \begin{enumerate}
 \item Estimate $\vtheta$ given observed data $\vx_1, \ldots, \vx_n$. This
-  involves solving an optimization problem
+  involves maximizing the marginal likelihood
   %
   \begin{equation}
     \hat\vtheta = \arg\max_{\vtheta} \sum_{i=1}^n \ln \left(\int_{\mathcal{Z}} p(\vx_i \mid \vz_i, \vtheta)\, dp(\vz_i \mid \vtheta)\right),
@@ -129,7 +135,8 @@ LVMs:
   such parameters.)
   
 \item Estimate $\vz_i$ given $\vx_i, \hat\vtheta$. This involves computing the
-  posterior mean, by combining the likelihood with the prior estimated in the
+  posterior mean, by combining the likelihood $p(\vx_i \mid \vz_i,
+  \hat\vtheta)$ with the prior $p(\vz_i \mid \hat\vtheta)$ estimated in the
   previous step. As above, this may not be tractable, and may require
   approximate inference methods. (In the case of PPCA, the prior was conjugate
   to the likelihood; therefore, the posterior mean had a closed form.)
@@ -172,7 +179,11 @@ have a closed form.
 How does one estimate $\vtheta$ given observed data $\vx_1, \ldots, \vx_n$? The
 integrals in equation \eqref{eq:eb} do not have closed forms for the VAE, so one needs
 to take a different strategy. The strategy taken for VAEs is \emph{variational
-inference} \cite{10.1080/01621459.2017.1285773}. Recall the objective function,
+inference} \cite{10.1080/01621459.2017.1285773}.
+
+\subsection{Variational inference}
+
+Recall the objective function,
 %
 \begin{align}
   &\quad \max_{\vtheta} \sum_{i=1}^n \ln\left(\int_{\mathcal{Z}} p(\vx_i \mid \vz_i, \vtheta) p(\vz_i \mid \vtheta) \,d\vz_i\right)\\
@@ -184,24 +195,24 @@ inference} \cite{10.1080/01621459.2017.1285773}. Recall the objective function,
   \intertext{By the definition of expectation with respect to $q(\vz_i \mid \vphi)$,}
   &= \max_{\vphi, \vtheta} \sum_{i=1}^n \ln\left(\E_q\left[\frac{p(\vx_i \mid \vz_i, \vtheta) p(\vz_i \mid \vtheta)}{q(\vz_i \mid \vphi)}\right]\right)\\
   \intertext{Finally, one can exchange log and expectation using Jensen's
-    inequality,}
+    inequality, yielding the \emph{evidence lower bound} (ELBO)}
   &\geq \max_{\vphi, \vtheta} \sum_i \E_q[\ln p(\vx_i \mid \vz_i, \vtheta) + \ln p(\vz_i \mid \vtheta) - \ln q(\vz_i \mid \vphi)] \label{eq:elbo}.
 \end{align}
-
-Equation \eqref{eq:elbo} is the objective function for variational inference in
+%
+The ELBO \eqref{eq:elbo} is the objective function for variational inference in
 LVMs, which can be optimized by a number of different algorithms, for example,
 gradient descent. (Variational inference in other models involves an objective
-function with similar form, involving the expectation of the joint probability
-density $\E_q[\ln p]$ and the expectation of the variational density $\E_q[\ln
-  q]$.)
+function with similar form, involving the expectation of the log joint
+probability density $\E_q[\ln p]$ and the expectation of the log variational
+density $\E_q[\ln q]$.)
 
-Before detailing how this objective function is optimized for VAEs
+Before detailing how the ELBO \eqref{eq:elbo} is optimized for VAEs
 specifically, first note that equation \eqref{eq:q} holds for any distribution
 $q$ (since we multiplied and divided by its density); however, one can show
 that the optimal $q$ (equivalently, optimal $\vphi$) is the true posterior
 $p(\vz_i \mid \vx_i, \vtheta)$ (equivalently, the parameters of this
 distribution) \cite{Neal1998}. Adding and subtracting $\ln p(\vx_i \mid
-\vtheta)$,
+\vtheta)$ from the ELBO \eqref{eq:elbo},
 %
 \begin{align}
   \begin{split}
@@ -221,70 +232,100 @@ distribution) \cite{Neal1998}. Adding and subtracting $\ln p(\vx_i \mid
   the two distributions are the
   same. Thus, the optimal $q$ (equivalently, optimal $\phi$), holding $\vtheta$
   fixed, is the true posterior given $\vtheta$ (equivalently, its parameters),
-  and the inequality \eqref{eq:elbo} becomes an equality}
+  in which case the inequality \eqref{eq:elbo} becomes an equality}
 &= \max_{\vtheta} \sum_{i=1}^n \ln p(\vx_i \mid \vtheta).
 \end{align}
-
-%% If one alternately computes $q(\vz_i \mid \vtheta) = p(\vz_i \mid \vx_i,
-%% \vtheta)$ (that is, optimizes \eqref{eq:elbo} with respect to $q$, where $q$
-%% can be any distribution and $\vtheta$ is fixed), and then optimizes
-%% \eqref{eq:elbo} with respect to $\vtheta$ (holding $q$ fixed), one recovers the
-%% EM algorithm.
-
-However, for many models (including VAEs), the true posterior does not have a
-closed form. In this case, optimizing the objective function \eqref{eq:elbo}
-with respect to $q$, where $q$ can be any distribution, is difficult (since one
-needs to find parameters $\vphi$ that can represent any distribution). So,
-instead one optimizes over some restricted family of distributions $q \in
-\mathcal{Q}$ (equivalently, some specific choice of parameter space for the
-values $\vphi$), which may not contain the true posterior.
-
-For example, one may assume that $q$ is a Gaussian distribution with unknown
-mean $\vmu$ and unknown covariance matrix $\msigma$ (since then the posterior
-mean is easy to compute; not since this is necessarily the true posterior), so
-$\vphi = (\vmu, \msigma)$. If the true posterior is not Gaussian, the
-inequality \eqref{eq:elbo} is strict, and is termed the \emph{evidence lower
-bound} (ELBO). And, from equation \eqref{eq:kl}, maximizing the ELBO with
-respect to $\vphi$ holding $\vtheta$ fixed is equivalent to minimizing the KL
-divergence between $q(\vz_i \mid \vphi)$ and $p(\vz_i \mid \vx_i, \vtheta)$
-holding $\vtheta$ fixed. Thus, the result will be the ``best'' approximating
+%
+Further, from equation \eqref{eq:kl}, maximizing the ELBO with respect to
+$\vphi$ holding $\vtheta$ fixed is equivalent to minimizing the KL divergence
+between $q(\vz_i \mid \vphi)$ and $p(\vz_i \mid \vx_i, \vtheta)$ holding
+$\vtheta$ fixed. Thus, the result will be the ``best'' approximating
 distribution $q$, in the sense that it has minimum KL divergence from the true
-posterior (given $\vtheta$), despite not being able to compute the true
-posterior! Further, because one assumed $q$ was Gaussian, computing the
-approximate posterior mean is trivial -- it is just $\vmu$.
+posterior (given $\vtheta$), even when one cannot compute the true posterior!
 
-In a VAE, the model is parameterized by a neural network $f$, termed the
-\emph{decoder network} (since it ``decodes'' the low-dimensional latent
-variable $\vz_i$ to produce the observed $\vx_i$, minus the noise). Therefore,
-it is natural to choose $q$ to also be parameterized by a neural network,
-termed the \emph{encoder network} (since it ``encodes'' $\vx_i$ to produce
-$\vz_i$). Specifically,
+\subsection{Solving the inference problems for VAEs}
+
+For VAEs, the true posterior $p(\vz_i \mid \vx_i, \vtheta)$ does not have a
+closed form. Instead, one usually assumes that $q$ is a Gaussian distribution
+with unknown mean and unknown diagonal covariance matrix
 %
 \begin{equation}
-  q(\vz_i \mid \vx_i, \vphi) = \N(m(\vx_i), \operatorname{diag}(s^2(\vx_i))),
+  q(\vz_i \mid \vx_i, \vphi) = \N(\vm_i, \diag(\vs_i^2)),
+  \label{eq:unamortized}
 \end{equation}
 %
-where $m, s^2$ are each $k$-dimensional outputs of a neural network taking
-$p$-dimensional input, denoting the mean and diagonal of the covariance matrix,
-respectively. In essence, one assumes the posterior is multivariate Gaussian
-with diagonal covariance, which is a special case of the example we gave above.
-(The mean and covariance matrix depend on the data $\vx_i$ for computational
-reasons \cite{Gershman2014}).
+where $\vphi = (\mm, \ms)$, $\mm$ denotes the $n \times k$ matrix $(\vm_1,
+\ldots, \vm_n)'$, and $\ms$ denotes the $n \times k$ matrix $(\vs_1, \ldots,
+\vs_n)'$. One makes this assumption in order that the approximate posterior
+mean (and certain other quantities) will be easy to compute; the assumed
+distribution is almost surely not the true posterior. There is considerable
+subsequent work on relaxing this assumption, in order to get better variational
+approximations that can be closer to the true posterior.
+
+Note that the variational approximation \eqref{eq:unamortized} is a
+simplification and not the way VAEs were originally described -- there is
+clearly no ``auto-encoding'' going on. Nevertheless, this approach is
+equivalent in the essential aspects (and possibly better with regards to the
+objective function achieved in training), as we detail below.
 
 Thus, one estimates $\vtheta$ given observed data $\vx_1, \ldots, \vx_n$ by
-optimizing the ELBO \eqref{eq:elbo} with respect to $\vphi, \vtheta$ (i.e.,
-$\sigma^2$ and the neural network parameters of $f, m, s^2$). This procedure
-also yields an estimate $\hat\vphi$, corresponding to the approximate posterior
-distribution $q$ (equivalently, the neural network parameters of $m, s^2$). For
-VAEs, this is achieved by stochastic optimization via gradient descent
-\cite{DBLP:journals/corr/KingmaW13}. Briefly, the fundamental difficulty is
-that \eqref{eq:elbo} does not have a closed form, and so it is replaced by a
-stochastic objective function that does have a closed form, whose expected
-value is the true objective function value, and whose gradient can be computed
-using backpropagation.
+optimizing the ELBO \eqref{eq:elbo} with respect to $\vphi, \vtheta$, where
+$\vphi$ denotes the parameters of the variational approximation
+\eqref{eq:unamortized}. This procedure also yields approximate estimates of the
+posterior distributions $\hat\vphi = (\hat\mm, \hat\ms)$. For VAEs, optimizing
+\eqref{eq:elbo} is still difficult since it does not have a closed form for
+VAEs. Specifically, $\E_q[\ln p(\vx_i \mid \vz_i, \vtheta)]$ does not have a
+closed form, due to the non-linear transform $f$; the remaining terms do have a
+closed form. (Note that the ELBO does have a closed form for other models.)
+Instead, one uses \emph{stochastic optimization}: the ELBO \eqref{eq:elbo} is
+replaced by a stochastic objective function that does have a closed form, whose
+expected value is the true objective function value, and whose gradient can be
+computed using backpropagation \cite{DBLP:journals/corr/KingmaW13}. We
+illustrate fitting VAEs using this approach in an online
+example\footnote{\url{https://aksarkar.github.io/singlecell-ideas/vae-unamortized.html}}.
 
 How does one estimate $\vz_i$ given $\vx_i$? The approximate posterior mean is
-$m(\vx_i)$, that is, the output of the encoder network.
+simply $\vm_i$.
+
+\subsection{Original description}
+
+Note that VAEs are parameterized by a neural network $f$, originally termed the
+\emph{decoder network} (since it ``decodes'' the low-dimensional latent
+variable $\vz_i$ to produce the noiseless, uncorrupted version of the observed
+$\vx_i$). As originally proposed, one chooses $q$ to also be parameterized by a
+neural network, termed the \emph{encoder network} (since it ``encodes'' $\vx_i$
+to produce $\vz_i$). Specifically,
+%
+\begin{equation}
+  q(\vz_i \mid \vx_i, \vphi) = \N(m(\vx_i), \diag(s^2(\vx_i))),
+  \label{eq:amortized}
+\end{equation}
+%
+where $m, s^2$ are each $k$-dimensional outputs (denoting the mean and diagonal
+of the covariance matrix, respectively) of a neural network taking
+$p$-dimensional input. This choice is the origin of the name ``variational
+autoencoder''.
+
+If one assumes the variational approximation \eqref{eq:amortized}, then $\vphi$
+denotes the neural network parameters of $m, s^2$. In this case, rather than
+optimizing an $\vm_i, \vs_i$ for each $\vx_i$, one instead learns functions $m,
+s^2$ that map each $\vx_i$ to its optimal $\vm_i^*, \vs_i^*$, an approach
+termed \emph{amortized inference} (meaning, amortized over observations
+$\vx_i$) \cite{Gershman2014}. Clearly, one does not need to do this; in fact,
+it results in worse objective function values at convergence if the encoder
+network is not powerful enough to represent the function mapping $\vx_i \mapsto
+\vm_i^*, \vs_i^*$, as we demonstrate in our online example.
+
+The main advantages of using amortized inference are: (1) when $n$ is large,
+the number of neural network parameters of $m, s^2$ may be smaller than the $2n
+\times k$ entries of $\mm, \ms$, (2) the implementation of minibatch gradient
+descent to optimize the ELBO \eqref{eq:elbo} when using an encoder network is
+simpler in commonly used libraries (e.g., \texttt{pytorch},
+\texttt{tensorflow}), and (3) one can re-use the learned $m, s^2$ for new
+observations $\vx_{i'}$. (In the case where one assumed the simpler variational
+approximation \eqref{eq:unamortized}, that is, $\vphi = \mm, \ms$, one must
+re-optimize \eqref{eq:elbo} with respect to $\vm_{i'}, \vs_{i'}$ holding
+$\vtheta$ fixed to fit a new observation $\vx_{i'}$.)
 
 \printbibliography
 
