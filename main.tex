@@ -75,9 +75,9 @@ are two inference goals for PPCA:
   $\hat\mw, \hat\sigma^2$ from the previous step.
 \end{enumerate}
 
-How does one estimate $\vtheta$ given observed data $\vx_1, \ldots, \vx_n$? In
-the case of PPCA, the integrals in equation \eqref{eq:eb} have closed forms
-(following from properties of the Gaussian distribution); thus,
+How does one estimate $\mw, \sigma^2$ given observed data $\vx_1, \ldots,
+\vx_n$? In the case of PPCA, the integrals in equation \eqref{eq:eb} have
+closed forms (following from properties of the Gaussian distribution); thus,
 %
 \begin{equation}
   \hat\mw, \hat\sigma^2 = \arg\max_{\mw, \sigma^2} \sum_{i=1}^n -\frac{1}{2}\ln\det(\mw\mw' + \sigma^2 \mi) - \frac{1}{2} \vx_i' (\mw\mw' + \sigma^2 \mi)^{-1} \vx_i.
@@ -162,20 +162,22 @@ A more complex LVM is the \emph{variational autoencoder} (VAE)
 where $f$ denotes a neural network with $k$-dimensional input and
 $p$-dimensional output, and $\vtheta$ denotes $\sigma^2$ and the parameters of
 $f$. As a simple example, suppose $f$ is a fully-connected feed-forward network
-with one hidden layer and a linear output layer, which can be written
+with one hidden layer of width $m < p$ and a linear output layer, which can be
+written
 %
 \begin{equation}
   f(\vz_i) = \mw_1 h(\mw_0 \vz_i + \vb_0) + \vb_1,
 \end{equation}
 %
-where $h$ is a non-linearity (say, ReLU) applied element-wise. In this case,
-$\vtheta = (\sigma^2, \mw_0, \mw_1, \vb_0, \vb_1)$, and the VAE is a non-linear
-version of PPCA. Specifically, one generates observations $\vx_i$ by applying
-the non-linear transform $f$ to the low-dimensional latent variable $\vz_i$,
-and then adding multivariate Gaussian noise with mean zero and covariance
-$\sigma^2 \mi$. As was the case for PPCA, the transform $f$ will be learned
-from the data (in PPCA, the transform was $\mw$); however, unlike PPCA, in
-general it does not have a closed form.
+where $\mw_0$ is an $m \times k$ matrix, $\vb_0$ is an $m$-vector, $\mw_1$ is a
+$p \times m$ matrix, $\vb_1$ is a $p$-vector, and $h$ is a non-linearity (say,
+ReLU) applied element-wise. In this case, $\vtheta = (\sigma^2, \mw_0, \mw_1,
+\vb_0, \vb_1)$, and the VAE is a non-linear version of PPCA. Specifically, one
+generates observations $\vx_i$ by applying the non-linear transform $f$ to the
+low-dimensional latent variable $\vz_i$, and then adding multivariate Gaussian
+noise with mean zero and covariance $\sigma^2 \mi$. As was the case for PPCA,
+the transform $f$ will be learned from the data (in PPCA, the transform was
+$\mw$); however, unlike PPCA, in general it does not have a closed form.
 
 How does one estimate $\vtheta$ given observed data $\vx_1, \ldots, \vx_n$? The
 integrals in equation \eqref{eq:eb} do not have closed forms for the VAE, so
@@ -241,9 +243,10 @@ distribution) \cite{Neal1998}. Adding and subtracting $\ln p(\vx_i \mid
 Second, note that from equation \eqref{eq:kl}, maximizing the ELBO with respect
 to $\vphi$ holding $\vtheta$ fixed is equivalent to minimizing the KL
 divergence between $q(\vz_i \mid \vphi)$ and $p(\vz_i \mid \vx_i, \vtheta)$
-holding $\vtheta$ fixed. Thus, the result will be the ``best'' approximating
-distribution $q$, in the sense that it has minimum KL divergence from the true
-posterior (given $\vtheta$), even when one cannot compute the true posterior!
+holding $\vtheta$ fixed, since $\ln p(\vx_i \mid \vtheta)$ does not depend on
+$\vphi$. Thus, the result will be the ``best'' approximating distribution $q$,
+in the sense that it has minimum KL divergence from the true posterior (given
+$\vtheta$), even when one cannot compute the true posterior!
 
 Third, note that using linearity of expectation and the definition of KL
 divergence, the ELBO \eqref{eq:elbo}
@@ -268,8 +271,8 @@ For VAEs, one estimates $\vtheta$ given observed data $\vx_1, \ldots, \vx_n$ by
 variational inference: optimizing the ELBO \eqref{eq:elbo} with respect to
 $\vphi, \vtheta$, where $\vphi$ denotes the parameters of a variational
 approximation $q$. This procedure also yields estimates $\hat\vphi$ of the
-variational parameters. Typically, one assumes that the approximation $q$ is a
-Gaussian distribution with unknown mean and unknown diagonal covariance matrix
+variational parameters. One assumes that the approximation $q$ is a Gaussian
+distribution with unknown mean and unknown diagonal covariance matrix
 %
 \begin{equation}
   q(\vz_i \mid \vx_i, \vphi) = \N(\vm_i, \diag(\vs_i^2)),
@@ -280,10 +283,10 @@ where $\vphi = (\mm, \ms)$, $\mm$ denotes the $n \times k$ matrix $(\vm_1,
 \ldots, \vm_n)'$, and $\ms$ denotes the $n \times k$ matrix $(\vs_1, \ldots,
 \vs_n)'$. One makes this assumption in order that the approximate posterior
 mean (and certain other quantities) will be easy to compute; the assumed
-distribution is almost surely not the true posterior. In this case, the result
-will be the Gaussian distribution with mean and diagonal covariance matrix
-closest to the true posterior (meaning, having minimum KL divergence to the
-true posterior, following from equation \eqref{eq:kl}).
+distribution is almost surely not the true posterior. In this case, the optimal
+solution will be the Gaussian distribution with mean and diagonal covariance
+matrix closest to the true posterior (meaning, having minimum KL divergence to
+the true posterior, following from equation \eqref{eq:kl}).
 
 Note that the variational approximation \eqref{eq:unamortized} is a
 simplification and not the way VAEs were originally described -- there is
