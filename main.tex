@@ -233,7 +233,7 @@ distribution) \cite{Neal1998}. Adding and subtracting $\ln p(\vx_i \mid
     between $q(\vz_i \mid \vphi)$ and $p(\vz_i \mid \vx_i, \vtheta)$; it equals
     zero when the two distributions are the same.}
   &= \max_{\vphi, \vtheta} \sum_{i=1}^n \ln p(\vx_i \mid \vtheta) - \KL\left(q(\vz_i \mid \vphi) \Vert\, p(\vz_i \mid \vx_i, \vtheta)\right) \label{eq:kl}
-  \intertext{Thus, the optimal $q$ (equivalently, optimal $\phi$), holding
+  \intertext{Thus, the optimal $q$ (equivalently, optimal $\vphi$), holding
     $\vtheta$ fixed, is the true posterior given $\vtheta$ (equivalently, its
     parameters), in which case the inequality \eqref{eq:elbo} becomes an
     equality,}
@@ -260,8 +260,8 @@ revealing that the objective function can be decomposed into two terms:
 \begin{enumerate}
 \item the \emph{reconstruction error} $\E_q[\ln p(\vx_i \mid \vz_i, \vtheta)]$,
   that pushes the model to explain the data,
-\item the \emph{regularization}, $\KL\left(q(\vz_i \mid \vphi) \Vert\ p(\vz_i
-  \mid \vtheta)\right)$ that pushes the approximate posterior to be close to
+\item the \emph{regularization} $\KL\left(q(\vz_i \mid \vphi) \Vert\ p(\vz_i
+  \mid \vtheta)\right)$, that pushes the approximate posterior to be close to
   the prior.
 \end{enumerate}
 
